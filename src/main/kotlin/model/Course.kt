@@ -1,6 +1,11 @@
 package model
 
-data class Course(val id: Int,
-                  val title: String,
+data class Course(val title: String,
                   val level: Int,
-                  val isActive: Boolean)
+                  val isActive: Boolean) {
+
+    var id: Int? = null
+}
+
+
+

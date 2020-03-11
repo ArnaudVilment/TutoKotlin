@@ -3,25 +3,66 @@ package dao
 import exception.CourseException
 import model.Course
 import model.Error
+import java.util.concurrent.atomic.AtomicInteger
 
 object CourseDao {
 
-    fun getTopCourse() = CourseDao.getCourse(1)
+    private val idCounter = AtomicInteger()
+
+    private val courses = mutableListOf<Course>()
+
+    fun addCourse(course: Course) {
+        if(courses.contains(course)) {
+            Error(404, Constants.errorCourseNotFound)
+        } else {
+            course.id = idCounter.incrementAndGet() - 1
+            courses.add(course)
+        }
+    }
+
+    fun changeCourse(courseId: Int, course: Course) {
+        try {
+            if (get(courseId) != null) {
+                course.id = courseId
+                courses[course.id!!] = course
+            }
+
+        } catch (e: CourseException) {
+            Error(404, Constants.errorCourseNotFound)
+        }
+    }
+
+    fun getTopCourse() = courses.maxBy { it.level }
+
+    fun getAllCourse() = courses
 
     fun getCourse(courseId: Int) =
             try {
-                CourseDao.get(courseId)
+                get(courseId)
             } catch (e: CourseException) {
                 Error(404, Constants.errorCourseNotFound)
             }
 
-    // ---
+    fun removeCourse(course: Course) {
+        if (!courses.contains(course)) {
+            Error(404, Constants.errorCourseNotFound)
+        }
+        courses.remove(course)
+    }
+
+    fun removeCourseById(courseId: Int) {
+        try {
+            get(courseId)
+            courses.remove(get(courseId))
+        } catch (e: CourseException) {
+            Error(404, Constants.errorCourseNotFound)
+        }
+    }
+
+    fun removeAllCourse() = courses.clear()
 
     private fun get(id: Int) =
-        when (id){
-            1 -> Course(1, "How to troll a Troll ?", 5, true)
-            2 -> Course(2, "Kotlin for troll", 1, true)
-            3 -> Course(3, "How to not use Java ?", 3, false)
-            else -> throw CourseException()
-        }
+        if(!courses.none { it.id == id }) {
+            courses.find { it.id == id }
+        } else throw CourseException()
 }
